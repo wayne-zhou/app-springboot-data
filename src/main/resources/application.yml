@@ -1,0 +1,14 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://user_app_invest:P7CSt*gQDC3H@10.114.8.30:27017,10.114.8.30:37017/ppdai_invest?connectTimeoutMS=300000&replicaSet=ppdai;readPreference=primaryPreferred
+#    uri: mongodb://test:123456@localhost:27017/mydb
+
+elasticsearch:
+  addresses: 127.0.0.1:9200
+  schema: http
+
+
+logging:
+  level:
+    root: info
