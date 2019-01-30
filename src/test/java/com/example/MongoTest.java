@@ -1,11 +1,11 @@
-package com.example.mongo;/**
+package com.example;/**
  * Created by zhouwei03 on 2017/11/24.
  */
 
-import com.example.mongo.dao.UserRepository;
-import com.example.mongo.model.User;
-import com.example.mongo.utils.DateUtils;
-import com.example.mongo.utils.JsonUtils;
+import com.example.model.User;
+import com.example.dao.UserRepository;
+import com.example.utils.DateUtils;
+import com.example.utils.JsonUtils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.WriteResult;

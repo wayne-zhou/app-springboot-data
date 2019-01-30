@@ -1,4 +1,4 @@
-package com.example.mongo.utils;
+package com.example.utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

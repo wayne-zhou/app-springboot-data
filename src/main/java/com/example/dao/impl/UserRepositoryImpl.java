@@ -1,6 +1,6 @@
-package com.example.mongo.dao.impl;
+package com.example.dao.impl;
 
-import com.example.mongo.model.User;
+import com.example.model.User;
 import com.mongodb.WriteResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;

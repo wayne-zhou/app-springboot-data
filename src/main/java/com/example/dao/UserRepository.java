@@ -1,8 +1,8 @@
-package com.example.mongo.dao;/**
+package com.example.dao;/**
  * Created by zhouwei03 on 2017/11/24.
  */
 
-import com.example.mongo.model.User;
+import com.example.model.User;
 import com.mongodb.WriteResult;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Page;

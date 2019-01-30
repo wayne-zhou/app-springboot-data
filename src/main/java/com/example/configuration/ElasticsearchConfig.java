@@ -1,4 +1,4 @@
-package com.example.mongo.configuration;
+package com.example.configuration;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;

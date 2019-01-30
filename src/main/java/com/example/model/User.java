@@ -1,4 +1,4 @@
-package com.example.mongo.model;/**
+package com.example.model;/**
  * Created by zhouwei03 on 2017/11/24.
  */
 

@@ -1,4 +1,4 @@
-package com.example.mongo.model;
+package com.example.model;
 
 import com.alibaba.fastjson.annotation.JSONField;
 

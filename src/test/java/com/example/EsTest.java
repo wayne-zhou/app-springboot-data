@@ -1,9 +1,9 @@
-package com.example.mongo;
+package com.example;
 
 import com.alibaba.fastjson.JSON;
-import com.example.mongo.model.EsQueryResult;
-import com.example.mongo.model.EsUser;
-import com.example.mongo.utils.EsUtils;
+import com.example.model.EsQueryResult;
+import com.example.model.EsUser;
+import com.example.utils.EsUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -78,7 +78,7 @@ public class EsTest {
 
     @Test
     public void add() throws IOException {
-        EsUser user = new EsUser("王老五", 18, "男", new Date(), "打太极，葵花宝典");
+        EsUser user = new EsUser("王老五", 19, "男", new Date(), "打太极，葵花宝典2");
         IndexResponse resp = esUtils.add("user_index", "user", "4", user);
         log.info("---------------------------------------add  IndexResponse: {}", JSON.toJSONString(resp));
     }
@@ -102,13 +102,14 @@ public class EsTest {
     @Test
     public void updateById() throws IOException {
         Map<String, Object> updateMap = new HashMap<String, Object>(){{put("name", "李四六");}};
-        Boolean  result = esUtils.updateById("user_index", "user", "2", updateMap);
+//        Boolean  result = esUtils.updateById("user_index", "user", "2", updateMap);
+        Boolean  result = esUtils.updateById("user_index", "user", "2", 3L, updateMap);
         log.info("---------------------------------------update  result: {}", JSON.toJSONString(result));
     }
 
     @Test
     public void getById() throws IOException {
-        EsUser user = esUtils.getById("user_index", "user", "1", EsUser.class);
+        EsUser user = esUtils.getById("user_index", "user", "2", EsUser.class);
         log.info("---------------------------------------getById  EsUser: {}", JSON.toJSONString(user));
     }
 

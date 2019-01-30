@@ -1,7 +1,7 @@
-package com.example.mongo.utils;
+package com.example.utils;
 
 import com.alibaba.fastjson.JSON;
-import com.example.mongo.model.EsQueryResult;
+import com.example.model.EsQueryResult;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.DocWriteResponse;
@@ -27,7 +27,10 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.reindex.UpdateByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -129,6 +132,7 @@ public class EsUtils {
 
     /**
      * 添加
+     * 存在时会整个覆盖原有文档
      */
     public IndexResponse add(String index, String type, String Id, Object obj) throws IOException {
         IndexRequest req = new IndexRequest(index, type, Id);
@@ -147,6 +151,9 @@ public class EsUtils {
         return restHighLevelClient.bulk(req);
     }
 
+    /**
+     * 删除
+     */
     public boolean deleteById(String index, String type, String id) throws IOException {
         try{
             DeleteRequest req = new DeleteRequest(index, type, id);
@@ -168,7 +175,32 @@ public class EsUtils {
     }
 
     /**
+     * 删除指定ID文档的某个field
+     * 如果删除多个field，使用add方法重新覆盖
+     */
+    public boolean removeFieldById(String index, String type, String id, String fieldName) throws IOException {
+        UpdateRequest req = new UpdateRequest(index, type, id);
+        String scriptStr = "ctx._source.remove(\""+fieldName+"\")";
+        Script updateScript = new Script(ScriptType.INLINE, "painless", scriptStr, new HashMap<>());
+        req.script(updateScript);
+
+        try{
+            UpdateResponse resp = restHighLevelClient.update(req);
+            return resp.getResult() == DocWriteResponse.Result.UPDATED;
+        }catch (ElasticsearchException e){
+            if (e.status() == RestStatus.NOT_FOUND) {
+                //处理由于文档不存在抛出的异常
+                log.info("removeField index:{}, type:{}, id:{} , fieldName:{}，文档不存在", index, type, id, fieldName);
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
      * 更新
+     * 不存在field时会新增field
      */
     public boolean updateById(String index, String type, String id, Map<String, Object> updateData) throws IOException {
         try{
@@ -181,11 +213,51 @@ public class EsUtils {
                 //处理由于文档不存在抛出的异常
                 log.info("更新 index:{}, type:{}, id:{} 失败，文档不存在", index, type, id);
             }
+        }
+        return false;
+    }
+
+    /**
+     * 带版本更新
+     * 相当于乐观锁
+     */
+    public boolean updateById(String index, String type, String id, Long version, Map<String, Object> updateData) throws IOException {
+        try{
+            UpdateRequest req = new UpdateRequest(index, type, id);
+            req.version(version);
+            req.doc(JSON.toJSONString(updateData), XContentType.JSON);
+            UpdateResponse resp = restHighLevelClient.update(req);
+            return resp.getResult() == DocWriteResponse.Result.UPDATED;
+        }catch (ElasticsearchException e){
+            if (e.status() == RestStatus.NOT_FOUND) {
+                //处理由于文档不存在抛出的异常
+                log.info("更新 index:{}, type:{}, id:{} 失败，文档不存在", index, type, id);
+            }
             if (e.status() == RestStatus.CONFLICT) {
                 //引发的异常表示返回了版本冲突错误
+                log.info("更新 index:{}, type:{}, id:{}, version:{} 失败，版本冲突", index, type, id, version, e);;
             }
         }
         return false;
+    }
+
+    /**
+     * 根据条件批量更新
+     * 6.5.x 以上版本支持
+     */
+    private boolean updateByQuery(String index, String type, SearchSourceBuilder sourceBuilder, Map<String, Object> updateData) throws IOException {
+        SearchRequest searchReq = new SearchRequest(index);
+        searchReq.types(type);
+        searchReq.source(sourceBuilder);
+
+        UpdateByQueryRequest req = new UpdateByQueryRequest(searchReq);
+        StringBuffer scriptStr = new StringBuffer();
+        updateData.forEach((k,v) -> scriptStr.append("ctx._source.").append(k).append("=params.").append(k).append(";"));
+        Script updateScript = new Script(ScriptType.INLINE, "painless", scriptStr.toString(), updateData);
+        req.setScript(updateScript);
+
+//        BulkByScrollResponse bulkResponse = restHighLevelClient.updateByQuery(req, RequestOptions.DEFAULT);
+        return true;
     }
 
     /**
@@ -195,6 +267,7 @@ public class EsUtils {
         GetRequest req = new GetRequest(index, type, id);
         GetResponse resp = restHighLevelClient.get(req);
         if(resp.isExists()){
+//            resp.getVersion();
             return JSON.parseObject(resp.getSourceAsString(), clazz);
         }
         return null;
@@ -203,7 +276,7 @@ public class EsUtils {
     /**
      * 条件查询
      */
-    public <T>EsQueryResult<T> query(String index, String type, SearchSourceBuilder sourceBuilder, Class<T> clazz) throws IOException {
+    public <T> EsQueryResult<T> query(String index, String type, SearchSourceBuilder sourceBuilder, Class<T> clazz) throws IOException {
         SearchRequest req = new SearchRequest(index);
         req.types(type);
         req.source(sourceBuilder);
@@ -213,14 +286,10 @@ public class EsUtils {
         Long totalCount = hists.getTotalHits(); //符合过滤条件的总数(不受分页影响)
         List<T> list = new ArrayList<T>(hists.getHits().length);
         for (SearchHit hist : hists.getHits()) {
+//            hist.getVersion();
             list.add(JSON.parseObject(hist.getSourceAsString(), clazz));
         }
         return new EsQueryResult(totalCount, list);
     }
-
-
-
-
-
 
 }

@@ -1,4 +1,4 @@
-package com.example.mongo.configuration;
+package com.example.configuration;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;

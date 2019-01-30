@@ -1,4 +1,4 @@
-package com.example.mongo.utils;/**
+package com.example.utils;/**
  * Created by zhouwei03 on 2017/11/13.
  */
 
